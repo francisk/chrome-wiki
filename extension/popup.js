@@ -20,123 +20,84 @@ function setStatus(text) {
   }
 }
 
-function escapeHtml(s) {
-  return String(s ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+function showView(viewName) {
+  const main = document.getElementById("mainView");
+  const about = document.getElementById("aboutView");
+  const settings = document.getElementById("settingsView");
+  if (!main || !about || !settings) return;
+  main.classList.toggle("hidden", viewName !== "main");
+  about.classList.toggle("hidden", viewName !== "about");
+  settings.classList.toggle("hidden", viewName !== "settings");
 }
 
-function syncTagClass(syncSt) {
-  if (syncSt === "ok") {
-    return "ok";
-  }
-  if (syncSt === "failed") {
-    return "failed";
-  }
-  return "pending";
-}
-
-function syncTagText(syncSt) {
-  if (syncSt === "ok") {
-    return "已同步";
-  }
-  if (syncSt === "failed") {
-    return "同步失败";
-  }
-  return "待同步";
-}
-
-async function renderResults(items) {
-  const el = document.getElementById("results");
-  if (!el) return;
-  if (!items || items.length === 0) {
-    el.innerHTML = `<div class="item mini">无结果</div>`;
+async function loadSettingsView() {
+  const st = wikiGetStorage();
+  const msgEl = document.getElementById("settingsMsg");
+  const baseEl = document.getElementById("settingsBase");
+  const keyEl = document.getElementById("settingsKey");
+  if (!st || !baseEl || !keyEl || !msgEl) {
     return;
   }
-  el.innerHTML = items
-    .map((it) => {
-      const title = escapeHtml(it.title || "(无标题)");
-      const url = escapeHtml(it.url || "");
-      const tagCls = syncTagClass(it.syncSt);
-      const tagTxt = syncTagText(it.syncSt);
-      const id = escapeHtml(it.id || "");
-      const canRetry = it.syncSt !== "ok";
-      return (
-        `<div class="item" data-id="${id}">` +
-        `<div class="t">${title}</div>` +
-        `<div class="u">${url}</div>` +
-        `<div class="m">` +
-        `<span class="tag ${tagCls}">${tagTxt}</span>` +
-        (canRetry
-          ? `<button class="btnmini" data-action="retry">重试同步</button>`
-          : `<span class="mini"> </span>`) +
-        `</div>` +
-        `</div>`
-      );
-    })
-    .join("");
+  const { bridgeBase = DEF_BRIDGE_BASE, bridgeApiKey = "" } = await st.get([
+    "bridgeBase",
+    "bridgeApiKey",
+  ]);
+  baseEl.value = bridgeBase || DEF_BRIDGE_BASE;
+  keyEl.value = bridgeApiKey || "";
+  msgEl.textContent = "";
 }
 
-async function doLocalSearch(q) {
-  const { searchMaterialsLocal, listMaterials } = await import("./idb.js");
-  if (q && q.trim()) {
-    return await searchMaterialsLocal({ q, limit: 30 });
-  }
-  return await listMaterials({ limit: 30 });
-}
-
-async function refreshSearchView() {
-  const qEl = document.getElementById("q");
-  const q = qEl ? qEl.value : "";
-  const items = await doLocalSearch(q);
-  await renderResults(items);
-}
-
-async function retrySyncById(id) {
-  const { base, apiKey } = await getBridgeConfig();
-  if (!apiKey) {
-    setStatus("请先在「设置」里填写 X-API-Key（与 .env 中 WIKI_BRIDGE_API_KEY 相同）。");
-    chrome.runtime.openOptionsPage();
+async function saveSettingsFromView() {
+  const st = wikiGetStorage();
+  const msgEl = document.getElementById("settingsMsg");
+  const baseEl = document.getElementById("settingsBase");
+  const keyEl = document.getElementById("settingsKey");
+  if (!st || !baseEl || !keyEl || !msgEl) {
     return;
   }
-  const { listMaterials, updateMaterialSync } = await import("./idb.js");
-  const items = await listMaterials({ limit: 500 });
-  const it = items.find((x) => x.id === id);
-  if (!it) {
-    setStatus("未找到该条目（可能已被清理）。");
+  const base = baseEl.value.trim() || DEF_BRIDGE_BASE;
+  const key = keyEl.value.trim();
+  await st.set({ bridgeBase: base, bridgeApiKey: key });
+  msgEl.textContent = "已保存";
+}
+
+function formatBytes(n) {
+  const num = Number(n);
+  if (!Number.isFinite(num) || num <= 0) {
+    return "0 B";
+  }
+  if (num < 1024) {
+    return `${Math.round(num)} B`;
+  }
+  if (num < 1024 * 1024) {
+    return `${(num / 1024).toFixed(1)} KB`;
+  }
+  return `${(num / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+async function refreshDbStats() {
+  const countEl = document.getElementById("dbCount");
+  const usageEl = document.getElementById("dbUsage");
+  if (!countEl || !usageEl) {
     return;
   }
-  await updateMaterialSync(id, { syncSt: "pending" });
-  await refreshSearchView();
-
   try {
-    const res = await fetch(`${base}/sync`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": apiKey,
-      },
-      body: JSON.stringify({ items: [it] }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data?.ok) {
-      await updateMaterialSync(id, { syncSt: "failed" });
-      setStatus(`同步失败：${data?.error ?? data?.detail ?? res.statusText}`);
-      await refreshSearchView();
-      return;
+    const { listMaterials } = await import("./idb.js");
+    const items = await listMaterials({ limit: 100000 });
+    countEl.textContent = String(items.length);
+
+    if (navigator.storage && navigator.storage.estimate) {
+      const est = await navigator.storage.estimate();
+      usageEl.textContent = `占用估算：${formatBytes(est.usage)} / 配额 ${formatBytes(est.quota)}`;
+    } else {
+      usageEl.textContent = "占用估算：不可用";
     }
-    await updateMaterialSync(id, { syncSt: "ok", syncAt: new Date().toISOString() });
-    setStatus("同步成功。");
-    await refreshSearchView();
   } catch (e) {
-    await updateMaterialSync(id, { syncSt: "failed" });
-    setStatus(`同步请求失败：${String(e)}`);
-    await refreshSearchView();
+    countEl.textContent = "--";
+    usageEl.textContent = `占用估算：${String(e)}`;
   }
 }
+
 
 /**
  * 多方案正文抓取：按站点启用专项策略，其余并行打分择优，最后 full_body 兜底。
@@ -476,7 +437,8 @@ async function runAiSummarize() {
   const { base, apiKey } = await getBridgeConfig();
   if (!apiKey) {
     setStatus("请先在「设置」里填写 X-API-Key（与 .env 中 WIKI_BRIDGE_API_KEY 相同）。");
-    chrome.runtime.openOptionsPage();
+    await loadSettingsView();
+    showView("settings");
     return;
   }
 
@@ -552,7 +514,8 @@ async function saveMaterial() {
   const { base, apiKey } = await getBridgeConfig();
   if (!apiKey) {
     setStatus("请先在「设置」里填写 X-API-Key（与 .env 中 WIKI_BRIDGE_API_KEY 相同）。");
-    chrome.runtime.openOptionsPage();
+    await loadSettingsView();
+    showView("settings");
     return;
   }
 
@@ -597,7 +560,6 @@ async function saveMaterial() {
           `同步接口：POST ${base}/sync${hint}`,
       );
       await updateMaterialSync(payload.id, { syncSt: "failed" });
-      await refreshSearchView();
       return;
     }
 
@@ -606,11 +568,11 @@ async function saveMaterial() {
       setStatus(
         `已保存。id=${payload.id ?? ""}\n主存储：插件 IndexedDB；已同步到本机，OpenClaw 可走 bridge 检索。`,
       );
-      await refreshSearchView();
+      await refreshDbStats();
     } else {
       setStatus(`保存失败：${data?.error ?? JSON.stringify(data)}`);
       await updateMaterialSync(payload.id, { syncSt: "failed" });
-      await refreshSearchView();
+      await refreshDbStats();
     }
   } catch (e) {
     setStatus(
@@ -620,7 +582,7 @@ async function saveMaterial() {
     try {
       const { updateMaterialSync } = await import("./idb.js");
       await updateMaterialSync(payload.id, { syncSt: "failed" });
-      await refreshSearchView();
+      await refreshDbStats();
     } catch {
       // ignore
     }
@@ -628,10 +590,6 @@ async function saveMaterial() {
 }
 
 function bindUi() {
-  document.getElementById("refresh").addEventListener("click", () => {
-    void loadFromTab();
-  });
-
   document.getElementById("ai").addEventListener("click", () => {
     void runAiSummarize();
   });
@@ -639,39 +597,41 @@ function bindUi() {
   document.getElementById("save").addEventListener("click", () => {
     void saveMaterial();
   });
-
-  document.getElementById("opts").addEventListener("click", (e) => {
-    e.preventDefault();
-    chrome.runtime.openOptionsPage();
+  document.getElementById("clearDb").addEventListener("click", async () => {
+    const ok = window.confirm("确认清空插件 IndexedDB 吗？\n仅删除插件本地数据，不影响本机 bridge 已同步数据。");
+    if (!ok) return;
+    try {
+      const { clearMaterials } = await import("./idb.js");
+      await clearMaterials();
+      setStatus("已清空 IndexedDB（本机 bridge 数据不受影响）。");
+      await refreshDbStats();
+    } catch (e) {
+      setStatus(`清空失败：${String(e)}`);
+    }
   });
 
-  const qEl = document.getElementById("q");
-  if (qEl) {
-    qEl.addEventListener("input", () => {
-      void refreshSearchView();
-    });
-  }
+  document.getElementById("optsBtn").addEventListener("click", () => {
+    void (async () => {
+      await loadSettingsView();
+      showView("settings");
+    })();
+  });
 
-  const resultsEl = document.getElementById("results");
-  if (resultsEl) {
-    resultsEl.addEventListener("click", (e) => {
-      const t = e.target;
-      if (!(t instanceof HTMLElement)) {
-        return;
-      }
-      const action = t.getAttribute("data-action");
-      if (action !== "retry") {
-        return;
-      }
-      const itemEl = t.closest(".item");
-      const id = itemEl ? itemEl.getAttribute("data-id") : "";
-      if (id) {
-        void retrySyncById(id);
-      }
-    });
-  }
+  document.getElementById("helpBtn").addEventListener("click", () => {
+    showView("about");
+  });
+
+  document.getElementById("backBtn").addEventListener("click", () => {
+    showView("main");
+  });
+  document.getElementById("settingsBackBtn").addEventListener("click", () => {
+    showView("main");
+  });
+  document.getElementById("saveSettingsBtn").addEventListener("click", () => {
+    void saveSettingsFromView();
+  });
 }
 
 bindUi();
 void loadFromTab();
-void refreshSearchView();
+void refreshDbStats();

@@ -130,3 +130,14 @@ export async function updateMaterialSync(id, patch) {
   }
 }
 
+export async function clearMaterials() {
+  const db = await openDb();
+  try {
+    const tx = db.transaction([STORE_MATERIALS], "readwrite");
+    tx.objectStore(STORE_MATERIALS).clear();
+    await txDone(tx);
+  } finally {
+    db.close();
+  }
+}
+

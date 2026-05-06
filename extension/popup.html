@@ -5,15 +5,90 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>素材本</title>
     <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0f1418;
+        --panel: #161d24;
+        --panel-soft: #1a232c;
+        --line: #2a3642;
+        --text: #e8eef3;
+        --text-soft: #9fb0bf;
+        --green: #26c281;
+        --green-soft: #1f8f62;
+        --blue-soft: #2b78ff;
+        --danger: #ef5350;
+        --warn: #f5b74f;
+      }
       body {
-        font-family: system-ui, sans-serif;
-        margin: 12px;
-        width: 380px;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "PingFang SC",
+          "Noto Sans CJK SC", sans-serif;
+        margin: 0;
+        width: 400px;
+        background: radial-gradient(circle at top right, #22313d 0%, var(--bg) 40%);
+        color: var(--text);
+        overflow: hidden;
+      }
+      .wrap {
+        padding: 8px;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 10px;
+        box-shadow:
+          0 10px 28px rgba(0, 0, 0, 0.35),
+          inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      }
+      .view.hidden {
+        display: none;
+      }
+      .titlebar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
+      }
+      .title-actions {
+        display: flex;
+        gap: 8px;
+      }
+      .icon-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: #1a2430;
+        color: #9bc7ff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        line-height: 1;
+        cursor: pointer;
+        flex: 0 0 auto;
+      }
+      #optsBtn {
+        width: 28px;
+        height: 28px;
+        font-size: 17px;
+      }
+      .icon-btn:hover {
+        background: #243244;
+      }
+      .brand {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+      }
+      .brand .dot {
+        color: var(--green);
+        margin-right: 4px;
       }
       label {
         display: block;
         font-size: 12px;
-        color: #444;
+        color: var(--text-soft);
         margin-top: 8px;
       }
       input,
@@ -22,131 +97,362 @@
         box-sizing: border-box;
         margin-top: 4px;
         font: inherit;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--panel-soft);
+        color: var(--text);
+        padding: 9px 10px;
+        outline: none;
+      }
+      input:focus,
+      textarea:focus {
+        border-color: var(--green-soft);
+        box-shadow: 0 0 0 2px rgba(38, 194, 129, 0.18);
       }
       textarea {
-        min-height: 72px;
-        resize: vertical;
+        min-height: 64px;
+        max-height: 64px;
+        resize: none;
       }
       .row {
         display: flex;
-        gap: 8px;
-        margin-top: 12px;
+        gap: 10px;
+        margin-top: 8px;
       }
       button {
         flex: 1;
-        padding: 8px;
+        padding: 9px 10px;
         font: inherit;
         cursor: pointer;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #1f2a34;
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 600;
+        transition: 0.14s ease;
+      }
+      .danger {
+        background: transparent;
+        color: #ff9f9d;
+        border-color: #5b2a2a;
+      }
+      .danger:hover {
+        background: rgba(239, 83, 80, 0.12);
+        border-color: #8a3f3f;
+      }
+      button:hover {
+        background: #253240;
+        border-color: #365068;
+      }
+      button:active {
+        transform: translateY(1px);
+      }
+      #save {
+        background: linear-gradient(180deg, #2ac786 0%, #1ca66d 100%);
+        border-color: #1c9c66;
+        color: #041b11;
+        font-weight: 700;
+      }
+      #save:hover {
+        filter: brightness(1.04);
       }
       #status {
         margin-top: 10px;
         font-size: 12px;
-        color: #666;
+        color: var(--text-soft);
         white-space: pre-wrap;
+        background: #10171d;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 8px 10px;
+      }
+      .debug-hidden {
+        display: none;
       }
       .sub {
-        margin: 8px 0 0;
+        margin: 10px 0 0;
         font-size: 12px;
       }
       .sub a {
-        color: #1565c0;
+        color: #7fb6ff;
+        text-decoration: none;
       }
-      .card {
-        margin-top: 12px;
-        padding-top: 10px;
-        border-top: 1px solid #eee;
+      .sub a:hover {
+        text-decoration: underline;
       }
       .mini {
         font-size: 12px;
-        color: #666;
-      }
-      .list {
-        margin-top: 8px;
-        max-height: 220px;
-        overflow: auto;
-        border: 1px solid #eee;
-        border-radius: 6px;
-      }
-      .item {
-        padding: 8px;
-        border-bottom: 1px solid #f0f0f0;
-      }
-      .item:last-child {
-        border-bottom: none;
-      }
-      .item .t {
-        font-size: 12px;
-        font-weight: 600;
-        line-height: 1.25;
-      }
-      .item .u {
-        font-size: 11px;
-        color: #666;
-        word-break: break-all;
-        margin-top: 2px;
-      }
-      .item .m {
-        display: flex;
-        gap: 8px;
-        align-items: center;
+        color: var(--text-soft);
         margin-top: 6px;
+        line-height: 1.4;
       }
-      .tag {
-        font-size: 11px;
-        padding: 2px 6px;
-        border-radius: 999px;
-        background: #f5f5f5;
-        color: #444;
+      ::placeholder {
+        color: #6f8295;
       }
-      .tag.ok {
-        background: #e8f5e9;
-        color: #1b5e20;
+      .db-stats {
+        margin-top: 8px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #111920;
+        padding: 10px;
       }
-      .tag.failed {
-        background: #ffebee;
-        color: #b71c1c;
-      }
-      .tag.pending {
-        background: #fff8e1;
-        color: #8d6e00;
-      }
-      .btnmini {
-        padding: 4px 8px;
+      .db-stats .k {
         font-size: 12px;
+        color: var(--text-soft);
+      }
+      .db-stats .v {
+        margin-top: 4px;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .help-panel {
+        margin-top: 10px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #111920;
+        padding: 10px;
+        font-size: 12px;
+        color: var(--text-soft);
+        line-height: 1.5;
+      }
+      .help-panel.hidden {
+        display: none;
+      }
+      .help-panel b {
+        color: var(--text);
+      }
+      .about-header {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+        min-height: 32px;
+      }
+      .back-btn {
+        position: absolute;
+        left: 0;
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: #1a2430;
+        color: var(--text);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
+        flex: 0 0 auto;
+      }
+      .about-title {
+        font-size: 16px;
+        font-weight: 700;
+        text-align: center;
+      }
+      .about-logo {
+        margin: 8px 0 10px;
+        border-radius: 12px;
+        height: 96px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .about-logo img {
+        width: 72px;
+        height: 72px;
+        object-fit: cover;
+        border-radius: 16px;
+      }
+      .about-links {
+        margin-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .about-link {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #141c25;
+        color: var(--text);
+        text-decoration: none;
+        padding: 11px 12px;
+        box-sizing: border-box;
+      }
+      .about-link span:last-child {
+        position: absolute;
+        right: 12px;
+      }
+      .about-link:hover {
+        border-color: #3f5368;
+        background: #192431;
+      }
+      .about-author {
+        margin-top: 8px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #141c25;
+        padding: 11px 12px;
+        color: var(--text-soft);
+        text-align: center;
+      }
+      .about-input {
+        margin-top: 8px;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        text-align: center;
+        font-size: 14px;
+        color: var(--text-soft);
+        padding: 6px 0;
+      }
+      .about-input::placeholder {
+        text-align: center;
+        color: var(--text-soft);
+      }
+      .about-input:focus {
+        border: none !important;
+        box-shadow: none !important;
+      }
+      .settings-title {
+        font-size: 16px;
+        font-weight: 700;
+        text-align: center;
+      }
+      .settings-hint {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--text-soft);
+        line-height: 1.5;
+      }
+      .settings-msg {
+        margin-top: 10px;
+        font-size: 12px;
+        color: #77ebb9;
+      }
+      .dbbar {
+        margin-top: 8px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #111920;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .dbbar-left {
+        min-width: 0;
+      }
+      .dbbar-title {
+        font-size: 12px;
+        color: var(--text-soft);
+      }
+      .dbbar-count {
+        margin-top: 2px;
+        font-size: 28px;
+        line-height: 1.05;
+        font-weight: 800;
+        color: var(--text);
+      }
+      .dbbar-usage {
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--text-soft);
+        white-space: nowrap;
+      }
+      .dbbar-btn {
+        flex: 0 0 auto;
+        width: 88px;
+        height: 74px;
+        border-radius: 10px;
       }
     </style>
   </head>
   <body>
-    <label for="title">标题</label>
-    <input id="title" type="text" />
+    <div class="wrap">
+      <div class="panel">
+        <div id="mainView" class="view">
+          <div class="titlebar">
+            <div class="brand"><span class="dot">●</span>素材同步助手</div>
+            <div class="title-actions">
+              <button id="helpBtn" class="icon-btn" type="button" title="关于">ⓘ</button>
+              <button id="optsBtn" class="icon-btn" type="button" title="连接设置">⚙</button>
+            </div>
+          </div>
 
-    <label for="url">链接</label>
-    <input id="url" type="text" readonly />
+          <label for="title">标题</label>
+          <input id="title" type="text" />
 
-    <label for="brief">摘要 / 摘录（可改）</label>
-    <textarea id="brief"></textarea>
+          <label for="url">链接</label>
+          <input id="url" type="text" readonly />
 
-    <label for="keywords">关键词（可选，逗号分隔）</label>
-    <input id="keywords" type="text" />
+          <label for="brief">摘要 / 摘录（可改）</label>
+          <textarea id="brief"></textarea>
 
-    <div class="row">
-      <button id="refresh" type="button">重新抓取</button>
-      <button id="ai" type="button">AI 摘要与标签</button>
-    </div>
-    <div class="row">
-      <button id="save" type="button">保存到 IndexedDB 并同步到本机</button>
-    </div>
-    <p class="sub">
-      <a href="#" id="opts">连接设置（bridge 地址与 X-API-Key）</a>
-    </p>
-    <div id="status"></div>
+          <label for="keywords">关键词（可选，逗号分隔）</label>
+          <input id="keywords" type="text" />
 
-    <div class="card">
-      <label for="q">插件内检索（IndexedDB）</label>
-      <input id="q" type="text" placeholder="输入关键词，如 rag / prompt / 标题…" />
-      <div class="mini">仅查询插件 IndexedDB；同步状态用于判断是否已写入本机供 OpenClaw 检索。</div>
-      <div class="list" id="results"></div>
+          <div class="row">
+            <button id="ai" type="button">自动摘要与标签</button>
+            <button id="save" type="button">同步到本地</button>
+          </div>
+          <div id="status" class="debug-hidden"></div>
+
+          <div class="dbbar">
+            <div class="dbbar-left">
+              <div class="dbbar-title">当前保存条数</div>
+              <div class="dbbar-count" id="dbCount">--</div>
+              <div class="dbbar-usage" id="dbUsage">占用估算：--</div>
+            </div>
+            <button id="clearDb" class="danger dbbar-btn" type="button">清理</button>
+          </div>
+        </div>
+
+        <div id="aboutView" class="view hidden">
+          <div class="about-header">
+            <button id="backBtn" class="back-btn" type="button" title="返回">←</button>
+            <div class="about-title">关于</div>
+          </div>
+          <div class="about-logo"><img src="icons/icon96.png" alt="logo" /></div>
+          <input id="aboutInput" class="about-input" type="text" placeholder="知识随手抓 V1.0" />
+          <div class="about-links">
+            <a class="about-link" href="https://github.com/francisk/chrome-wiki" target="_blank">
+              <span>GitHub</span><span>↗</span>
+            </a>
+          </div>
+          <div class="about-author">作者：<span id="authorText">（这里你来填写）</span></div>
+        </div>
+
+        <div id="settingsView" class="view hidden">
+          <div class="about-header">
+            <button id="settingsBackBtn" class="back-btn" type="button" title="返回">←</button>
+            <div class="settings-title">连接设置</div>
+          </div>
+          <div class="settings-hint">
+            「同步到本地」与「自动摘要与标签」都通过本机 bridge。<br />
+            X-API-Key 需与 `.env` 里的 `WIKI_BRIDGE_API_KEY` 一致。
+          </div>
+          <label for="settingsBase">Bridge 地址</label>
+          <input id="settingsBase" type="text" placeholder="http://127.0.0.1:3456" />
+
+          <label for="settingsKey">X-API-Key</label>
+          <input id="settingsKey" type="password" />
+
+          <div class="row">
+            <button id="saveSettingsBtn" type="button">保存</button>
+          </div>
+          <div id="settingsMsg" class="settings-msg"></div>
+        </div>
+      </div>
     </div>
     <script src="popup.js"></script>
   </body>
