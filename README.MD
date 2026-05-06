@@ -45,10 +45,14 @@ cp .env.example .env
 npm run server
 ```
 
-看到类似输出即正常：
+启动后请确认两点：
+- 终端出现 `wiki-bridge 监听 ...`，表示服务已启动
+- 地址中的端口与你 `.env` 的 `WIKI_BRIDGE_PORT` 一致；不一致就停止进程后按当前 `.env` 重启
+
+示例输出：
 
 ```text
-wiki-bridge 监听 http://127.0.0.1:3456 （需 X-API-Key）
+wiki-bridge 监听 http://127.0.0.1:<WIKI_BRIDGE_PORT>
 ```
 
 ---
@@ -60,7 +64,7 @@ wiki-bridge 监听 http://127.0.0.1:3456 （需 X-API-Key）
 3. 点击「加载已解压的扩展程序」
 4. 选择项目内 `extension/` 目录
 5. 打开扩展的「选项页」，填写：
-   - Bridge 地址（必填，例如 `http://127.0.0.1:3456`）
+   - Bridge 地址（必填，例如 `http://127.0.0.1:<WIKI_BRIDGE_PORT>`）
    - `X-API-Key`（必须与 `.env` 的 `WIKI_BRIDGE_API_KEY` 一致）
 
 ---
@@ -95,7 +99,7 @@ wiki-bridge 监听 http://127.0.0.1:3456 （需 X-API-Key）
 ### 健康检查
 
 ```bash
-curl -s -H "X-API-Key: <YOUR_KEY>" "http://127.0.0.1:3456/health"
+curl -s -H "X-API-Key: <YOUR_KEY>" "http://127.0.0.1:<WIKI_BRIDGE_PORT>/health"
 ```
 
 ### 保存素材
@@ -105,14 +109,14 @@ curl -s -X POST \
   -H "X-API-Key: <YOUR_KEY>" \
   -H "Content-Type: application/json" \
   -d '{"url":"https://example.com","title":"示例","brief":"摘要","keywords":"标签"}' \
-  "http://127.0.0.1:3456/sync"
+  "http://127.0.0.1:<WIKI_BRIDGE_PORT>/sync"
 ```
 
 ### 检索素材
 
 ```bash
 curl -s -H "X-API-Key: <YOUR_KEY>" \
-  "http://127.0.0.1:3456/search?q=rag&limit=10"
+  "http://127.0.0.1:<WIKI_BRIDGE_PORT>/search?q=rag&limit=10"
 ```
 
 返回字段已收敛为：`id`, `title`, `url`, `brief`, `keywords`, `savedAt`, `score`。
@@ -121,7 +125,7 @@ curl -s -H "X-API-Key: <YOUR_KEY>" \
 
 ```bash
 curl -s -H "X-API-Key: <YOUR_KEY>" \
-  "http://127.0.0.1:3456/list?limit=20"
+  "http://127.0.0.1:<WIKI_BRIDGE_PORT>/list?limit=20"
 ```
 
 ---
