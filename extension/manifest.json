@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Chrome Plugin Wiki（素材本）",
+  "version": "0.3.0",
+  "description": "保存当前页标题/链接/摘要到本地素材库，可选 AI 摘要与标签；经本机 HTTP bridge 写入 JSONL。",
+  "action": {
+    "default_title": "保存素材",
+    "default_popup": "popup.html"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "permissions": ["activeTab", "scripting", "tabs", "storage"],
+  "host_permissions": ["http://127.0.0.1/*", "http://localhost/*"]
+}

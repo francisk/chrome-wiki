@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>素材本设置</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 520px;
+        margin: 24px;
+      }
+      label {
+        display: block;
+        margin-top: 14px;
+        font-size: 13px;
+        color: #333;
+      }
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 4px;
+        font: inherit;
+        padding: 8px;
+      }
+      p.hint {
+        font-size: 12px;
+        color: #666;
+        margin: 4px 0 0;
+      }
+      button {
+        margin-top: 20px;
+        padding: 10px 16px;
+        font: inherit;
+        cursor: pointer;
+      }
+      #msg {
+        margin-top: 12px;
+        font-size: 13px;
+        color: #0a0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>素材本 — 连接本机 bridge</h1>
+    <p class="hint">
+      「保存素材」与「AI 摘要」都走本机 wiki-bridge（须先 <code>npm run server</code>）。
+      密钥须与根目录 <code>.env</code> 里的 <code>WIKI_BRIDGE_API_KEY</code> 一致；LLM
+      密钥只在服务端 <code>.env</code> 的 <code>OPENAI_API_KEY</code> 中配置。
+    </p>
+
+    <label for="base">Bridge 地址</label>
+    <input id="base" type="text" placeholder="http://127.0.0.1:3456" autocomplete="off" />
+
+    <label for="key">X-API-Key（与 WIKI_BRIDGE_API_KEY 相同）</label>
+    <input id="key" type="password" autocomplete="off" />
+
+    <button id="save" type="button">保存</button>
+    <div id="msg"></div>
+    <script src="options.js"></script>
+  </body>
+</html>

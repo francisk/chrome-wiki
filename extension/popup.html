@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>素材本</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 12px;
+        width: 380px;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        color: #444;
+        margin-top: 8px;
+      }
+      input,
+      textarea {
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 4px;
+        font: inherit;
+      }
+      textarea {
+        min-height: 72px;
+        resize: vertical;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      button {
+        flex: 1;
+        padding: 8px;
+        font: inherit;
+        cursor: pointer;
+      }
+      #status {
+        margin-top: 10px;
+        font-size: 12px;
+        color: #666;
+        white-space: pre-wrap;
+      }
+      .sub {
+        margin: 8px 0 0;
+        font-size: 12px;
+      }
+      .sub a {
+        color: #1565c0;
+      }
+    </style>
+  </head>
+  <body>
+    <label for="title">标题</label>
+    <input id="title" type="text" />
+
+    <label for="url">链接</label>
+    <input id="url" type="text" readonly />
+
+    <label for="brief">摘要 / 摘录（可改）</label>
+    <textarea id="brief"></textarea>
+
+    <label for="keywords">关键词（可选，逗号分隔）</label>
+    <input id="keywords" type="text" />
+
+    <div class="row">
+      <button id="refresh" type="button">重新抓取</button>
+      <button id="ai" type="button">AI 摘要与标签</button>
+    </div>
+    <div class="row">
+      <button id="save" type="button">保存到本机</button>
+    </div>
+    <p class="sub">
+      <a href="#" id="opts">连接设置（bridge 地址与 X-API-Key）</a>
+    </p>
+    <div id="status"></div>
+    <script src="popup.js"></script>
+  </body>
+</html>

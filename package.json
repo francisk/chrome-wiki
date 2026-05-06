@@ -1,0 +1,13 @@
+{
+  "name": "chrome-plugin-wiki",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "serve": "node bridge/server.js",
+    "server": "node bridge/server.js",
+    "test": "node test/test_keyword_search.mjs && node test/test_llm_parse.mjs && node test/test_native_frame.mjs && node test/test_native_host_process.mjs && node test/test_save_http.mjs"
+  }
+}

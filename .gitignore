@@ -1,0 +1,7 @@
+node_modules/
+.env
+.DS_Store
+*.log
+bridge/.native-node-path
+test/
+tests/
