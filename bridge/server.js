@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 
 import { readAllMaterials, savePayloadToStore } from "./lib/store.js";
 import { parseMaterialSaveBody } from "./lib/save-http.js";
+import { parseMaterialSyncBody } from "./lib/sync-http.js";
+import { syncItemsToStore } from "./lib/sync-store.js";
 import { searchMaterials } from "./lib/keyword-search.js";
 import { summarizeWithLlm } from "./lib/llm-summarize.js";
 
@@ -166,6 +168,37 @@ async function handle(req, res) {
     try {
       const rec = savePayloadToStore(parsed.payload);
       json(res, 200, { ok: true, id: rec.id });
+    } catch (e) {
+      json(res, 500, {
+        ok: false,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/sync") {
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch (e) {
+      if (e.message === "payload_too_large") {
+        json(res, 413, { error: "payload_too_large" });
+        return;
+      }
+      badRequest(res, "invalid_json");
+      return;
+    }
+
+    const parsed = parseMaterialSyncBody(body);
+    if (parsed.error) {
+      badRequest(res, parsed.error);
+      return;
+    }
+
+    try {
+      const out = syncItemsToStore(parsed.items);
+      json(res, 200, out);
     } catch (e) {
       json(res, 500, {
         ok: false,

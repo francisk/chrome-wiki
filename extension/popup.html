@@ -51,6 +51,70 @@
       .sub a {
         color: #1565c0;
       }
+      .card {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid #eee;
+      }
+      .mini {
+        font-size: 12px;
+        color: #666;
+      }
+      .list {
+        margin-top: 8px;
+        max-height: 220px;
+        overflow: auto;
+        border: 1px solid #eee;
+        border-radius: 6px;
+      }
+      .item {
+        padding: 8px;
+        border-bottom: 1px solid #f0f0f0;
+      }
+      .item:last-child {
+        border-bottom: none;
+      }
+      .item .t {
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.25;
+      }
+      .item .u {
+        font-size: 11px;
+        color: #666;
+        word-break: break-all;
+        margin-top: 2px;
+      }
+      .item .m {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-top: 6px;
+      }
+      .tag {
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: #f5f5f5;
+        color: #444;
+      }
+      .tag.ok {
+        background: #e8f5e9;
+        color: #1b5e20;
+      }
+      .tag.failed {
+        background: #ffebee;
+        color: #b71c1c;
+      }
+      .tag.pending {
+        background: #fff8e1;
+        color: #8d6e00;
+      }
+      .btnmini {
+        padding: 4px 8px;
+        font-size: 12px;
+        cursor: pointer;
+      }
     </style>
   </head>
   <body>
@@ -71,12 +135,19 @@
       <button id="ai" type="button">AI 摘要与标签</button>
     </div>
     <div class="row">
-      <button id="save" type="button">保存到本机</button>
+      <button id="save" type="button">保存到 IndexedDB 并同步到本机</button>
     </div>
     <p class="sub">
       <a href="#" id="opts">连接设置（bridge 地址与 X-API-Key）</a>
     </p>
     <div id="status"></div>
+
+    <div class="card">
+      <label for="q">插件内检索（IndexedDB）</label>
+      <input id="q" type="text" placeholder="输入关键词，如 rag / prompt / 标题…" />
+      <div class="mini">仅查询插件 IndexedDB；同步状态用于判断是否已写入本机供 OpenClaw 检索。</div>
+      <div class="list" id="results"></div>
+    </div>
     <script src="popup.js"></script>
   </body>
 </html>

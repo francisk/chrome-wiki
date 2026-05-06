@@ -2,7 +2,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const DATA_DIR = path.join(os.homedir(), ".chrome-plugin-wiki");
+const DATA_DIR = process.env.WIKI_DATA_DIR
+  ? path.resolve(String(process.env.WIKI_DATA_DIR))
+  : path.join(os.homedir(), ".chrome-plugin-wiki");
 
 export function materialsPath() {
   return path.join(DATA_DIR, "materials.jsonl");

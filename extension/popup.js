@@ -20,6 +20,124 @@ function setStatus(text) {
   }
 }
 
+function escapeHtml(s) {
+  return String(s ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function syncTagClass(syncSt) {
+  if (syncSt === "ok") {
+    return "ok";
+  }
+  if (syncSt === "failed") {
+    return "failed";
+  }
+  return "pending";
+}
+
+function syncTagText(syncSt) {
+  if (syncSt === "ok") {
+    return "已同步";
+  }
+  if (syncSt === "failed") {
+    return "同步失败";
+  }
+  return "待同步";
+}
+
+async function renderResults(items) {
+  const el = document.getElementById("results");
+  if (!el) return;
+  if (!items || items.length === 0) {
+    el.innerHTML = `<div class="item mini">无结果</div>`;
+    return;
+  }
+  el.innerHTML = items
+    .map((it) => {
+      const title = escapeHtml(it.title || "(无标题)");
+      const url = escapeHtml(it.url || "");
+      const tagCls = syncTagClass(it.syncSt);
+      const tagTxt = syncTagText(it.syncSt);
+      const id = escapeHtml(it.id || "");
+      const canRetry = it.syncSt !== "ok";
+      return (
+        `<div class="item" data-id="${id}">` +
+        `<div class="t">${title}</div>` +
+        `<div class="u">${url}</div>` +
+        `<div class="m">` +
+        `<span class="tag ${tagCls}">${tagTxt}</span>` +
+        (canRetry
+          ? `<button class="btnmini" data-action="retry">重试同步</button>`
+          : `<span class="mini"> </span>`) +
+        `</div>` +
+        `</div>`
+      );
+    })
+    .join("");
+}
+
+async function doLocalSearch(q) {
+  const { searchMaterialsLocal, listMaterials } = await import("./idb.js");
+  if (q && q.trim()) {
+    return await searchMaterialsLocal({ q, limit: 30 });
+  }
+  return await listMaterials({ limit: 30 });
+}
+
+async function refreshSearchView() {
+  const qEl = document.getElementById("q");
+  const q = qEl ? qEl.value : "";
+  const items = await doLocalSearch(q);
+  await renderResults(items);
+}
+
+async function retrySyncById(id) {
+  const { base, apiKey } = await getBridgeConfig();
+  if (!apiKey) {
+    setStatus("请先在「设置」里填写 X-API-Key（与 .env 中 WIKI_BRIDGE_API_KEY 相同）。");
+    chrome.runtime.openOptionsPage();
+    return;
+  }
+  const { listMaterials, updateMaterialSync } = await import("./idb.js");
+  const items = await listMaterials({ limit: 500 });
+  const it = items.find((x) => x.id === id);
+  if (!it) {
+    setStatus("未找到该条目（可能已被清理）。");
+    return;
+  }
+  await updateMaterialSync(id, { syncSt: "pending" });
+  await refreshSearchView();
+
+  try {
+    const res = await fetch(`${base}/sync`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": apiKey,
+      },
+      body: JSON.stringify({ items: [it] }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data?.ok) {
+      await updateMaterialSync(id, { syncSt: "failed" });
+      setStatus(`同步失败：${data?.error ?? data?.detail ?? res.statusText}`);
+      await refreshSearchView();
+      return;
+    }
+    await updateMaterialSync(id, { syncSt: "ok", syncAt: new Date().toISOString() });
+    setStatus("同步成功。");
+    await refreshSearchView();
+  } catch (e) {
+    await updateMaterialSync(id, { syncSt: "failed" });
+    setStatus(`同步请求失败：${String(e)}`);
+    await refreshSearchView();
+  }
+}
+
 /**
  * 多方案正文抓取：按站点启用专项策略，其余并行打分择优，最后 full_body 兜底。
  * 必须自包含（无闭包），供 chrome.scripting.executeScript 序列化注入。
@@ -439,10 +557,13 @@ async function saveMaterial() {
   }
 
   const payload = {
+    id: crypto?.randomUUID ? crypto.randomUUID() : undefined,
     title: document.getElementById("title").value.trim(),
     url: document.getElementById("url").value.trim(),
     brief: document.getElementById("brief").value.trim(),
     keywords: document.getElementById("keywords").value.trim(),
+    savedAt: new Date().toISOString(),
+    syncSt: "pending",
   };
 
   if (!payload.url) {
@@ -450,15 +571,18 @@ async function saveMaterial() {
     return;
   }
 
-  setStatus("正在请求本机 bridge 写入素材库…");
+  setStatus("正在写入 IndexedDB 并同步到本机 bridge…");
   try {
-    const res = await fetch(`${base}/save`, {
+    const { putMaterial, updateMaterialSync } = await import("./idb.js");
+    await putMaterial(payload);
+
+    const res = await fetch(`${base}/sync`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-API-Key": apiKey,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ items: [payload] }),
     });
 
     const data = await res.json().catch(() => ({}));
@@ -469,22 +593,37 @@ async function saveMaterial() {
           "\n\n【401】X-API-Key 与 .env 的 WIKI_BRIDGE_API_KEY 须完全一致（不要填 sk-）。打开「连接设置」粘贴保存。";
       }
       setStatus(
-        `保存失败 (${res.status}): ${data?.error ?? data?.detail ?? JSON.stringify(data)}${hint}`,
+        `已写入 IndexedDB，但同步到本机失败（${res.status}）：${data?.error ?? data?.detail ?? JSON.stringify(data)}\n` +
+          `同步接口：POST ${base}/sync${hint}`,
       );
+      await updateMaterialSync(payload.id, { syncSt: "failed" });
+      await refreshSearchView();
       return;
     }
 
     if (data?.ok) {
+      await updateMaterialSync(payload.id, { syncSt: "ok", syncAt: new Date().toISOString() });
       setStatus(
-        `已保存。id=${data.id ?? ""}\n素材写入 ~/.chrome-plugin-wiki/materials.jsonl；OpenClaw 可走同一 bridge 检索。`,
+        `已保存。id=${payload.id ?? ""}\n主存储：插件 IndexedDB；已同步到本机，OpenClaw 可走 bridge 检索。`,
       );
+      await refreshSearchView();
     } else {
       setStatus(`保存失败：${data?.error ?? JSON.stringify(data)}`);
+      await updateMaterialSync(payload.id, { syncSt: "failed" });
+      await refreshSearchView();
     }
   } catch (e) {
     setStatus(
-      `请求本机 bridge 失败：${String(e)}\n请先在本项目目录执行 npm run server，并核对 Bridge 地址与端口。`,
+      `已写入 IndexedDB，但请求本机同步失败：${String(e)}\n` +
+        "请先在本项目目录执行 npm run server，并核对 Bridge 地址与端口。",
     );
+    try {
+      const { updateMaterialSync } = await import("./idb.js");
+      await updateMaterialSync(payload.id, { syncSt: "failed" });
+      await refreshSearchView();
+    } catch {
+      // ignore
+    }
   }
 }
 
@@ -505,7 +644,34 @@ function bindUi() {
     e.preventDefault();
     chrome.runtime.openOptionsPage();
   });
+
+  const qEl = document.getElementById("q");
+  if (qEl) {
+    qEl.addEventListener("input", () => {
+      void refreshSearchView();
+    });
+  }
+
+  const resultsEl = document.getElementById("results");
+  if (resultsEl) {
+    resultsEl.addEventListener("click", (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) {
+        return;
+      }
+      const action = t.getAttribute("data-action");
+      if (action !== "retry") {
+        return;
+      }
+      const itemEl = t.closest(".item");
+      const id = itemEl ? itemEl.getAttribute("data-id") : "";
+      if (id) {
+        void retrySyncById(id);
+      }
+    });
+  }
 }
 
 bindUi();
 void loadFromTab();
+void refreshSearchView();

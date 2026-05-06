@@ -4,12 +4,12 @@
 
 ## 你要的两件事
 
-1. **扩展**：保存当前页「标题 / 链接 / 摘要 / 可选关键词」到本机 `~/.chrome-plugin-wiki/materials.jsonl`（经本机 **`POST /save`**，与 AI 摘要共用 wiki-bridge，不经云端）。
-2. **HTTP API**（单独进程）：扩展写库、OpenClaw / Agent 检索，请求均需带 **`X-API-Key`**。
+1. **扩展**：保存当前页「标题 / 链接 / 摘要 / 可选关键词」到 **插件 IndexedDB（主存储）**，并在保存后同步到本机素材库（供 OpenClaw 检索）。
+2. **HTTP API**（单独进程）：本机 wiki-bridge 接收同步（`POST /sync`）并提供检索（`/search`、`/list`），请求均需带 **`X-API-Key`**。
 
 ## 架构说明
 
-- **wiki-bridge**（`node bridge/server.js`）：长期监听 `127.0.0.1`，负责 `POST /save` 追加 JSONL、`GET /search` / `GET /list` 检索、`POST /summarize` 调 LLM。扩展保存前须已启动该进程。
+- **wiki-bridge**（`node bridge/server.js`）：长期监听 `127.0.0.1`，负责 `POST /sync` 接收扩展同步并追加本机 JSONL、`GET /search` / `GET /list` 检索、`POST /summarize` 调 LLM。扩展保存前须已启动该进程。
 - 仓库里仍保留 `bridge/native-host.js` 等 **Native Messaging** 实现，仅供旧方案参考；**当前扩展默认不再使用**。
 
 ## 环境与密钥
@@ -46,12 +46,12 @@ curl -s -H "X-API-Key: 你的密钥" \
 curl -s -H "X-API-Key: 你的密钥" "http://127.0.0.1:3456/list?limit=50"
 ```
 
-写入一条素材（与扩展「保存」等价，JSON 字段：`url` 必填，`title` / `brief` / `keywords` 可选）：
+同步写入一条素材（与扩展「保存」同步阶段等价，JSON 字段：`url` 必填，`title` / `brief` / `keywords` 可选）：
 
 ```bash
 curl -s -X POST -H "X-API-Key: 你的密钥" -H "Content-Type: application/json" \
   -d '{"url":"https://example.com/a","title":"示例","brief":"","keywords":""}' \
-  "http://127.0.0.1:3456/save"
+  "http://127.0.0.1:3456/sync"
 ```
 
 ## AI 摘要与标签（可选）
@@ -59,7 +59,7 @@ curl -s -X POST -H "X-API-Key: 你的密钥" -H "Content-Type: application/json"
 1. 在 `.env` 中配置 `OPENAI_API_KEY`（及按需 `OPENAI_BASE_URL`、`OPENAI_MODEL`），**重启** `npm run server`。
 2. 在扩展右键菜单或 `chrome://extensions` 中打开 **扩展选项**，填写与 `.env` 一致的 **X-API-Key** 与 **Bridge 地址**（默认 `http://127.0.0.1:3456`）。
 3. 在正文页打开弹窗 → 点 **「AI 摘要与标签」**：正文会发到本机 `POST /summarize`，由服务端调 LLM，返回的摘要与关键词会填入表单（仍需你确认后再 **保存**）。
-4. 点 **「保存」**：扩展请求本机 **`POST /save`**；若失败，请确认 **`npm run server` 已运行** 且密钥一致。
+4. 点 **「保存」**：扩展先写入 **IndexedDB**，再请求本机 **`POST /sync`**；若同步失败，请确认 **`npm run server` 已运行** 且密钥一致。
 5. 微信公众号正文会优先读取 `#js_content`；若仍提示正文过短，可在页面上选中一段再点 AI。
 
 ## 安装 Chrome 扩展

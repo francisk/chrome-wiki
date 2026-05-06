@@ -3,12 +3,10 @@
 一个本地优先的 Chrome 扩展 + 本机 HTTP bridge。
 
 当前能力：
-- 扩展保存网页素材（标题、链接、摘要、关键词）
-- 本机 bridge 提供 `POST /save`、`GET /search`、`GET /list`、`POST /summarize`
-- OpenClaw 或其他工具可通过本机 HTTP API 检索素材
-
-> 当前持久化为 `~/.chrome-plugin-wiki/materials.jsonl`。  
-> 还没有切到 IndexedDB 持久化。
+- 扩展保存网页素材到 **IndexedDB（主存储）**
+- 保存后同步到本机 bridge（便于 OpenClaw/CLI 检索）
+- 本机 bridge 提供 `POST /sync`、`GET /search`、`GET /list`、`POST /summarize`（兼容保留 `POST /save`）
+- OpenClaw 或其他工具可通过本机 HTTP API 检索素材（数据来自同步后的本机库）
 
 ---
 
@@ -69,11 +67,11 @@ wiki-bridge 监听 http://127.0.0.1:3456 （需 X-API-Key）
 
 ## 4. 使用方式
 
-### 4.1 保存素材
+### 4.1 保存素材（双写+同步）
 
 在任意网页打开扩展弹窗：
 - 点击「重新抓取」可更新标题/链接/摘要
-- 点击「保存」会调用本机 `POST /save`
+- 点击「保存」会先写入 **IndexedDB**，再调用本机 `POST /sync` 同步
 
 成功会显示返回的 `id`。
 
@@ -101,7 +99,7 @@ curl -s -X POST \
   -H "X-API-Key: <YOUR_KEY>" \
   -H "Content-Type: application/json" \
   -d '{"url":"https://example.com","title":"示例","brief":"摘要","keywords":"标签"}' \
-  "http://127.0.0.1:3456/save"
+  "http://127.0.0.1:3456/sync"
 ```
 
 ### 检索素材
