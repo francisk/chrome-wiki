@@ -65,3 +65,25 @@ export function searchMaterials(materials, query, limit) {
     .sort((a, b) => b.s - a.s || String(b.m.savedAt).localeCompare(String(a.m.savedAt)));
   return scored.slice(0, limit).map((x) => x.m);
 }
+
+export function searchMaterialsScored(materials, query, limit) {
+  const qRaw = String(query ?? "").trim();
+  if (!qRaw) {
+    return materials
+      .slice(-limit)
+      .reverse()
+      .map((m) => ({ m, s: 0 }));
+  }
+  const queryTokens = uniqTokens(tokenize(qRaw));
+  if (queryTokens.length === 0) {
+    return materials
+      .slice(-limit)
+      .reverse()
+      .map((m) => ({ m, s: 0 }));
+  }
+  return materials
+    .map((m) => ({ m, s: scoreDoc(queryTokens, m) }))
+    .filter((x) => x.s > 0)
+    .sort((a, b) => b.s - a.s || String(b.m.savedAt).localeCompare(String(a.m.savedAt)))
+    .slice(0, limit);
+}

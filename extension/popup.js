@@ -1,5 +1,3 @@
-const DEF_BRIDGE_BASE = "http://127.0.0.1:3456";
-
 const BRIEF_PREVIEW_LEN = 800;
 
 function wikiGetStorage() {
@@ -38,11 +36,11 @@ async function loadSettingsView() {
   if (!st || !baseEl || !keyEl || !msgEl) {
     return;
   }
-  const { bridgeBase = DEF_BRIDGE_BASE, bridgeApiKey = "" } = await st.get([
+  const { bridgeBase = "", bridgeApiKey = "" } = await st.get([
     "bridgeBase",
     "bridgeApiKey",
   ]);
-  baseEl.value = bridgeBase || DEF_BRIDGE_BASE;
+  baseEl.value = bridgeBase || "";
   keyEl.value = bridgeApiKey || "";
   msgEl.textContent = "";
 }
@@ -55,8 +53,12 @@ async function saveSettingsFromView() {
   if (!st || !baseEl || !keyEl || !msgEl) {
     return;
   }
-  const base = baseEl.value.trim() || DEF_BRIDGE_BASE;
+  const base = baseEl.value.trim();
   const key = keyEl.value.trim();
+  if (!base || !key) {
+    msgEl.textContent = "bridge 地址和 X-API-Key 都必须填写。";
+    return;
+  }
   await st.set({ bridgeBase: base, bridgeApiKey: key });
   msgEl.textContent = "已保存";
 }
@@ -383,13 +385,13 @@ async function injectExtract(tabId) {
 async function getBridgeConfig() {
   const st = wikiGetStorage();
   if (!st) {
-    return { base: DEF_BRIDGE_BASE, apiKey: "" };
+    return { base: "", apiKey: "" };
   }
-  const { bridgeBase = DEF_BRIDGE_BASE, bridgeApiKey = "" } = await st.get([
+  const { bridgeBase = "", bridgeApiKey = "" } = await st.get([
     "bridgeBase",
     "bridgeApiKey",
   ]);
-  const base = (bridgeBase || DEF_BRIDGE_BASE).replace(/\/$/, "");
+  const base = String(bridgeBase || "").trim().replace(/\/$/, "");
   return { base, apiKey: bridgeApiKey || "" };
 }
 
@@ -435,8 +437,8 @@ async function loadFromTab() {
 
 async function runAiSummarize() {
   const { base, apiKey } = await getBridgeConfig();
-  if (!apiKey) {
-    setStatus("请先在「设置」里填写 X-API-Key（与 .env 中 WIKI_BRIDGE_API_KEY 相同）。");
+  if (!base || !apiKey) {
+    setStatus("请先在「设置」里填写 bridge 地址与 X-API-Key。");
     await loadSettingsView();
     showView("settings");
     return;
@@ -512,8 +514,8 @@ async function runAiSummarize() {
 
 async function saveMaterial() {
   const { base, apiKey } = await getBridgeConfig();
-  if (!apiKey) {
-    setStatus("请先在「设置」里填写 X-API-Key（与 .env 中 WIKI_BRIDGE_API_KEY 相同）。");
+  if (!base || !apiKey) {
+    setStatus("请先在「设置」里填写 bridge 地址与 X-API-Key。");
     await loadSettingsView();
     showView("settings");
     return;

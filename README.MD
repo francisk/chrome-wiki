@@ -60,7 +60,7 @@ wiki-bridge 监听 http://127.0.0.1:3456 （需 X-API-Key）
 3. 点击「加载已解压的扩展程序」
 4. 选择项目内 `extension/` 目录
 5. 打开扩展的「选项页」，填写：
-   - Bridge 地址（默认 `http://127.0.0.1:3456`）
+   - Bridge 地址（必填，例如 `http://127.0.0.1:3456`）
    - `X-API-Key`（必须与 `.env` 的 `WIKI_BRIDGE_API_KEY` 一致）
 
 ---
@@ -70,12 +70,18 @@ wiki-bridge 监听 http://127.0.0.1:3456 （需 X-API-Key）
 ### 4.1 保存素材（双写+同步）
 
 在任意网页打开扩展弹窗：
-- 点击「重新抓取」可更新标题/链接/摘要
-- 点击「保存」会先写入 **IndexedDB**，再调用本机 `POST /sync` 同步
+- 点击「AI 生成摘要」可调用本机 `POST /summarize` 生成摘要与标签
+- 点击「保存到 IndexedDB 并同步到本机」会先写入 **IndexedDB**，再调用本机 `POST /sync` 同步
 
 成功会显示返回的 `id`。
 
-### 4.2 AI 摘要与关键词（可选）
+### 4.2 Omnibox 检索（地址栏 `s`）
+
+- 在 Chrome 地址栏输入 `s` 后按空格（或 `Tab`）进入扩展检索模式
+- 继续输入关键词即可调用本机 `GET /search`
+- 建议项中带 `[来自插件]` 前缀的是扩展返回结果，其余可能是 Chrome 默认建议
+
+### 4.3 AI 摘要与关键词（可选）
 
 点击「AI 摘要与标签」会调用本机 `POST /summarize`。  
 需先在 `.env` 中配置 `OPENAI_API_KEY` 并重启 `npm run server`。
@@ -108,6 +114,8 @@ curl -s -X POST \
 curl -s -H "X-API-Key: <YOUR_KEY>" \
   "http://127.0.0.1:3456/search?q=rag&limit=10"
 ```
+
+返回字段已收敛为：`id`, `title`, `url`, `brief`, `keywords`, `savedAt`, `score`。
 
 ### 最近列表
 

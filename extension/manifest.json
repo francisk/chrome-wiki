@@ -18,6 +18,12 @@
       "32": "icons/icon32.png"
     }
   },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "omnibox": {
+    "keyword": "s"
+  },
   "options_ui": {
     "page": "options.html",
     "open_in_tab": true

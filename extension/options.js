@@ -1,5 +1,3 @@
-const DEF_BASE = "http://127.0.0.1:3456";
-
 function wikiGetStorage() {
   try {
     if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
@@ -20,11 +18,11 @@ async function load() {
     msgEl.style.color = "#c62828";
     return;
   }
-  const { bridgeBase = DEF_BASE, bridgeApiKey = "" } = await st.get([
+  const { bridgeBase = "", bridgeApiKey = "" } = await st.get([
     "bridgeBase",
     "bridgeApiKey",
   ]);
-  document.getElementById("base").value = bridgeBase || DEF_BASE;
+  document.getElementById("base").value = bridgeBase || "";
   document.getElementById("key").value = bridgeApiKey || "";
 }
 
@@ -36,8 +34,13 @@ document.getElementById("save").addEventListener("click", async () => {
     msgEl.style.color = "#c62828";
     return;
   }
-  const base = document.getElementById("base").value.trim() || DEF_BASE;
+  const base = document.getElementById("base").value.trim();
   const key = document.getElementById("key").value.trim();
+  if (!base || !key) {
+    msgEl.textContent = "bridge 地址和 X-API-Key 都必须填写。";
+    msgEl.style.color = "#c62828";
+    return;
+  }
   await st.set({ bridgeBase: base, bridgeApiKey: key });
   msgEl.textContent = "已保存。";
   msgEl.style.color = "#0a0";

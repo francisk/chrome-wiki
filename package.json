@@ -8,7 +8,7 @@
   "scripts": {
     "serve": "node bridge/server.js",
     "server": "node bridge/server.js",
-    "test": "node test/test_keyword_search.mjs && node test/test_llm_parse.mjs && node test/test_native_frame.mjs && node test/test_native_host_process.mjs && node test/test_save_http.mjs && node test/test_idb_materials.mjs && node test/test_idb_search_and_sync.mjs && node test/test_sync_http.mjs && node test/test_paths_env.mjs && node test/test_sync_persist.mjs"
+    "test": "node test/test_keyword_search.mjs && node test/test_llm_parse.mjs && node test/test_native_frame.mjs && node test/test_native_host_process.mjs && node test/test_save_http.mjs && node test/test_idb_materials.mjs && node test/test_idb_search_and_sync.mjs && node test/test_sync_http.mjs && node test/test_paths_env.mjs && node test/test_sync_persist.mjs && node test/test_search_contract.mjs"
   },
   "dependencies": {
     "fake-indexeddb": "^6.2.5"

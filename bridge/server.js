@@ -8,7 +8,8 @@ import { readAllMaterials, savePayloadToStore } from "./lib/store.js";
 import { parseMaterialSaveBody } from "./lib/save-http.js";
 import { parseMaterialSyncBody } from "./lib/sync-http.js";
 import { syncItemsToStore } from "./lib/sync-store.js";
-import { searchMaterials } from "./lib/keyword-search.js";
+import { searchMaterialsScored } from "./lib/keyword-search.js";
+import { toSearchResults } from "./lib/search-contract.js";
 import { summarizeWithLlm } from "./lib/llm-summarize.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -129,7 +130,7 @@ async function handle(req, res) {
     const q = url.searchParams.get("q") ?? "";
     const limit = parseLimit(url.searchParams.get("limit"), 10, 50);
     const materials = readAllMaterials();
-    const results = searchMaterials(materials, q, limit);
+    const results = toSearchResults(searchMaterialsScored(materials, q, limit));
     json(res, 200, {
       query: q,
       count: results.length,
